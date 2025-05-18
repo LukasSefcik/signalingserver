@@ -76,11 +76,17 @@ var  yetify = require('yetify'),
 
 // Create an http(s) server instance to that socket.io can listen to
 if (config.server.secure) {
-    server = require('https').Server({
-        key: fs.readFileSync(config.server.key),
-        cert: fs.readFileSync(config.server.cert),
-        passphrase: config.server.password
-    }, server_handler);
+    // Kontrolujeme, či súbory existujú, aby sme predišli chybám
+    if (fs.existsSync(config.server.key) && fs.existsSync(config.server.cert)) {
+        server = require('https').Server({
+            key: fs.readFileSync(config.server.key),
+            cert: fs.readFileSync(config.server.cert),
+            passphrase: config.server.password
+        }, server_handler);
+    } else {
+        console.log("SSL certifikáty nenájdené, používam HTTP server");
+        server = require('http').Server(server_handler);
+    }
 } else {
     server = require('http').Server(server_handler);
 }
@@ -90,10 +96,22 @@ sockets.ListenSocket(server, config);
 
 if (config.uid) process.setuid(config.uid);
 
+// Určenie URL podľa prostredia
 var httpUrl;
-if (config.server.secure) {
-    httpUrl = "https://live.videoanalysis.sk:" + port;
+var hostname = 'localhost';
+
+// Detekcia prostredia Render
+if (process.env.RENDER) {
+    hostname = process.env.RENDER_EXTERNAL_HOSTNAME || 'live.videoanalysis.sk';
+    httpUrl = "https://" + hostname;
 } else {
-    httpUrl = "http://live.videoanalysis.sk:" + port;
+    // Lokálne alebo vlastný server
+    hostname = process.env.HOSTNAME || 'live.videoanalysis.sk';
+    if (config.server.secure) {
+        httpUrl = "https://" + hostname + ":" + port;
+    } else {
+        httpUrl = "http://" + hostname + ":" + port;
+    }
 }
+
 console.log(yetify.logo() + ' -- signal master is running at: ' + httpUrl);
