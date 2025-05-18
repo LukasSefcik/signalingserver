@@ -23,7 +23,7 @@
   },
   "license": "MIT",
   "scripts": {
-    "build": "npm install",
+    "build": "npm install && generate-ssl-certs.sh",
     "start": "NODE_ENV=production node server.js",
     "test": "node test.js"
   }
