@@ -1,0 +1,173 @@
+﻿<!DOCTYPE html>
+<html lang="en-IE">
+<head>
+    <meta charset="utf-8" />
+    <title>Streamer test page</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <link rel="stylesheet" href="css/style.css" />
+</head>
+<body>
+    <h1>Streamer test page</h1>
+    <figure>
+        <div id="videoContainer">
+            <video loop autoplay controls="true" width='100%' height='100%' id="localvid"></video>
+        </div>
+        <div id="additional-controls" class="additcontrols">
+            <table id="tableconnection">
+                <tr>
+                    <td>AccessLink:</td>
+                    <td colspan="3"><input type="text" id="link" value="" /></td>
+                    <td class="buttoncolumn"><button id="ConnectStatus" type="button" data-state="disabled">Connect</button></td>
+                </tr>
+                <tr>
+                    <td class="namecolumn1">Video encoder:</td>
+                    <td>
+                        <select id="vidEncoder" readonly>
+                            <option value="vp8">vp8</option>
+                            <option value="vp9">vp9</option>
+                            <option value="h264">h264</option>
+                        </select>
+                    </td>
+                    <td class="namecolumn2">Video bitrate:</td>
+                    <td><input type="text" id="vidBitrate" value="default"/></td>
+                    <td></td>
+                </tr>
+                <tr>
+                    <td class="namecolumn1">Audio encoder:</td>
+                    <td class="textcolumn">
+                        <select id="audEncoder">
+                            <option value="opus">opus</option>
+                        </select>
+                    </td>
+                    <td class="namecolumn2">Audio bitrate:</td>
+                    <td><input type="text" id="audBitrate" value="128K"/></td>
+                    <td></td>
+                </tr>
+                <tr>
+                    <td colspan="2">
+                        <div align="right">
+                            <button id="start" type="button" data-state="startStreaming">Start</button>
+                        </div>
+                    </td>
+                    <td class="stopButton" colspan="2">
+                        <button id="stop" type="button" data-state="stopStreaming">Stop</button>
+                    </td>
+                </tr>
+
+                <tr>
+                    <td>Received messages:</td>
+                    <td colspan="3"><textarea id="received"></textarea></td>
+                    <td></td>
+                </tr>
+                <tr>
+                    <td>Send message:</td>
+                    <td colspan="3"><input type="text" id="message" value="A message to send" /></td>
+                    <td><button id="sendmessage" type="button" data-state="message" title="Send message to peer">Send</button></td>
+                </tr>
+            </table>
+        </div>
+        <figcaption>
+            Medialooks | <a href="http://www.medialooks.com/">medialooks.com</a>
+        </figcaption>
+    </figure>
+    <script src="js/jquery.min.js"></script>
+    <script src="js/simplewebrtc.bundle.js"></script>
+    <script>
+        var signalingServer = 'https://rtc.medialooks.com:8889';
+        // create webrtc connection
+        var webrtc = new SimpleWebRTC({
+            url: signalingServer,
+            stunServer: 'stun:stun.l.google.com:19302',
+            localVideoEl: 'localvid',
+            remoteVideosEl: '',
+            autoRequestMedia: true,
+            debug: false,
+            detectSpeakingEvents: true,
+            autoAdjustMic: false
+        });
+
+        //Handle message from target peer
+        webrtc.on('channelMessage', function (peer, label, data) {
+            if (data.type == 'custommessage') {
+                $('#received').append(data.payload + '\n');
+                $('#received').scrollTop($('#received')[0].scrollHeight);
+            }
+        });
+
+        //Control handlers
+        $(document).ready(function () {
+            $('#link').attr('value', 'https://rtc.medialooks.com:8889/Room' + Math.trunc(Math.random() * 10000) + '/WebStreamer' + Math.trunc(Math.random() * 10000));
+            $('#start').click(function () {
+                var res = $('#link').val().split("/");
+                if (res.length >= 5) {
+                    if (res[0] + '//' + res[2] != signalingServer) {
+                        signalingServer = res[0] + '//' + res[2];
+                        webrtc = new SimpleWebRTC({
+                            url: signalingServer,
+                            stunServer: 'stun:stun.l.google.com:19302',
+                            localVideoEl: 'localvid',
+                            remoteVideosEl: '',
+                            autoRequestMedia: true,
+                            debug: false,
+                            detectSpeakingEvents: true,
+                            autoAdjustMic: false
+                        })
+                    }
+
+                    var peerInfo = {
+                        nickName: res[4],
+                        vidEncoder: $('#vidEncoder').val(),
+                        vidBitrate: $('#vidBitrate').val(),
+                        audEncoder: $('#audEncoder').val(),
+                        audBitrate: $('#audBitrate').val(),
+                        strongId: webrtc.connection.connection.id,
+                        mode: 'sender'
+                    };
+                    webrtc.setInfo(peerInfo); // Store strongId
+
+                    if (res[3]) {
+                        webrtc.joinRoom(res[3]);
+                        $('#ConnectStatus').attr('data-state', 'enabled');
+                    }
+                }
+            });
+
+            $('#stop').click(function () {
+                webrtc.leaveRoom();
+                $('#ConnectStatus').attr('data-state', 'disabled');
+            });
+
+            $('#mute').click(function () {
+                if ($('#mute').attr('data-state') == 'mute') {
+                    $('#mute').attr('data-state', 'unmute');
+                    var lvid = document.getElementById('localvid');
+                    if (lvid) lvid.muted = true;
+                }
+                else {
+                    $('#mute').attr('data-state', 'mute')
+                    if (videoEl) videoEl.muted = false;
+                }
+            });
+
+            $('#message').keypress(function (e) {
+                if ((e.which || e.keyCode) === 13 && $('#message').val())
+                    webrtc.sendDataChannelMessageToPeer(targetId, $('#message').val());
+            });
+
+            $('#sendmessage').click(function () {
+                if ($('#message').val())
+                    webrtc.sendDataChannelMessageToPeer(targetId, $('#message').val());
+            });
+            $('#fs').click(function () {
+                var videoEl = document.getElementById('localvid');
+                var rfs = videoEl.requestFullscreen
+                    || videoEl.webkitRequestFullScreen
+                    || videoEl.mozRequestFullScreen
+                    || videoEl.msRequestFullscreen;
+
+                rfs.call(videoEl);
+            });
+        });
+    </script>
+</body>
+</html>
