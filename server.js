@@ -103,7 +103,7 @@ var hostname = 'localhost';
 // Detekcia prostredia Render
 if (process.env.RENDER) {
     hostname = process.env.RENDER_EXTERNAL_HOSTNAME || 'live.videoanalysis.sk';
-    httpUrl = "https://" + hostname + ":" + port;
+    httpUrl = "https://" + hostname;
 } else {
     // Lokálne alebo vlastný server
     hostname = process.env.HOSTNAME || 'live.videoanalysis.sk';
