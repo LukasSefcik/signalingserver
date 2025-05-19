@@ -7,15 +7,25 @@ var socketIO = require('socket.io'),
 W3CWebSocket = require('websocket').w3cwebsocket;
 
 exports.ListenSocket = function (server, config) {
+    console.log('Initializing socket.io server...');
     var opts = {
         pingTimeout: config.server.pingTimeout,
-        pingInterval: config.server.pingInterval
+        pingInterval: config.server.pingInterval,
+        cors: {
+            origin: ["https://www.videoanalysis.sk", "http://www.videoanalysis.sk"],
+            methods: ["GET", "POST"],
+            credentials: true
+        },
+        allowEIO3: true,
+        transports: ['websocket', 'polling']
     };
 
     var io = socketIO.listen(server, opts);
+    console.log('Socket.io server initialized with options:', opts);
     exports.io = io;
 
     io.sockets.on('connection', function (client) {
+        console.log('New client connected:', client.id);
         client.resources = {
             screen: false,
             video: true,

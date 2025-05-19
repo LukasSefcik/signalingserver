@@ -90,7 +90,7 @@ if (config.server.secure) {
 } else {
     server = require('http').Server(server_handler);
 }
-server.listen(port, '0.0.0.0');
+server.listen(port);
 
 sockets.ListenSocket(server, config);
 
@@ -103,7 +103,7 @@ var hostname = 'localhost';
 // Detekcia prostredia Render
 if (process.env.RENDER) {
     hostname = process.env.RENDER_EXTERNAL_HOSTNAME || 'live.videoanalysis.sk';
-    httpUrl = "https://" + hostname;
+    httpUrl = "https://" + hostname + ":" + port;
 } else {
     // Lokálne alebo vlastný server
     hostname = process.env.HOSTNAME || 'live.videoanalysis.sk';
