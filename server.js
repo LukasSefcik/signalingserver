@@ -76,17 +76,11 @@ var  yetify = require('yetify'),
 
 // Create an http(s) server instance to that socket.io can listen to
 if (config.server.secure) {
-    // Kontrolujeme, či súbory existujú, aby sme predišli chybám
-    if (fs.existsSync(config.server.key) && fs.existsSync(config.server.cert)) {
-        server = require('https').Server({
-            key: fs.readFileSync(config.server.key),
-            cert: fs.readFileSync(config.server.cert),
-            passphrase: config.server.password
-        }, server_handler);
-    } else {
-        console.log("SSL certifikáty nenájdené, používam HTTP server");
-        server = require('http').Server(server_handler);
-    }
+    server = require('https').Server({
+        key: fs.readFileSync(config.server.key),
+        cert: fs.readFileSync(config.server.cert),
+        passphrase: config.server.password
+    }, server_handler);
 } else {
     server = require('http').Server(server_handler);
 }
@@ -96,15 +90,10 @@ sockets.ListenSocket(server, config);
 
 if (config.uid) process.setuid(config.uid);
 
-// Určenie URL podľa prostredia
 var httpUrl;
-var hostname = 'localhost';
-
-// Lokálne alebo vlastný server
 if (config.server.secure) {
-    httpUrl = "https://signalingserver-eytp.onrender.com:" + port;
+    httpUrl = "https://localhost:" + port;
 } else {
     httpUrl = "http://localhost:" + port;
 }
-
 console.log(yetify.logo() + ' -- signal master is running at: ' + httpUrl);
