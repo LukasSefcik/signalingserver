@@ -76,11 +76,17 @@ var  yetify = require('yetify'),
 
 // Create an http(s) server instance to that socket.io can listen to
 if (config.server.secure) {
-    server = require('https').Server({
-        key: fs.readFileSync(config.server.key),
-        cert: fs.readFileSync(config.server.cert),
-        passphrase: config.server.password
-    }, server_handler);
+    // Kontrolujeme, či súbory existujú, aby sme predišli chybám
+    if (fs.existsSync(config.server.key) && fs.existsSync(config.server.cert)) {
+        server = require('https').Server({
+            key: fs.readFileSync(config.server.key),
+            cert: fs.readFileSync(config.server.cert),
+            passphrase: config.server.password
+        }, server_handler);
+    } else {
+        console.log("SSL certifikáty nenájdené, používam HTTP server");
+        server = require('http').Server(server_handler);
+    }
 } else {
     server = require('http').Server(server_handler);
 }
