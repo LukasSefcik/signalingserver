@@ -102,7 +102,7 @@ var hostname = 'localhost';
 
 // Lokálne alebo vlastný server
 if (config.server.secure) {
-    httpUrl = "https://localhost:" + port;
+    httpUrl = "https://signalingserver-eytp.onrender.com:" + port;
 } else {
     httpUrl = "http://localhost:" + port;
 }
