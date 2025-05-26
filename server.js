@@ -100,18 +100,11 @@ if (config.uid) process.setuid(config.uid);
 var httpUrl;
 var hostname = 'localhost';
 
-// Detekcia prostredia Render
-if (process.env.RENDER) {
-    hostname = process.env.RENDER_EXTERNAL_HOSTNAME || 'live.videoanalysis.sk';
-    httpUrl = "https://" + hostname + ":" + port;
+// Lokálne alebo vlastný server
+if (config.server.secure) {
+    httpUrl = "https://localhost:" + port;
 } else {
-    // Lokálne alebo vlastný server
-    hostname = process.env.HOSTNAME || 'live.videoanalysis.sk';
-    if (config.server.secure) {
-        httpUrl = "https://" + hostname + ":" + port;
-    } else {
-        httpUrl = "http://" + hostname + ":" + port;
-    }
+    httpUrl = "http://localhost:" + port;
 }
 
 console.log(yetify.logo() + ' -- signal master is running at: ' + httpUrl);
